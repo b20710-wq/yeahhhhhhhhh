@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="항공기 제빙액의 농도와 어는점 관계를 살펴보는 고등학교 화학 수업용 오프라인 시뮬레이터">
+<title>어는점 탐구 실험실 | 물질과 에너지</title>
+<style>
+:root { color-scheme: light dark; --bg: light-dark(#f3f7fb,#0b1220); --surface: light-dark(#ffffff,#131e30); --surface2: light-dark(#edf4fa,#1b2b40); --text: light-dark(#172b43,#ecf3fb); --muted: light-dark(#60748b,#a9bad0); --border: light-dark(#d6e2ec,#2e425a); --accent: light-dark(#176b87,#5cc5db); --accent2: light-dark(#dff3f6,#183f52); --good: light-dark(#176b54,#7fe0bf); --warn: light-dark(#8a5a05,#f4c86a); --shadow: 0 12px 32px light-dark(#1b3b5712,#00000026); }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: system-ui,-apple-system,"Noto Sans KR","Malgun Gothic",sans-serif; line-height: 1.5; }
+#app { min-height: 100vh; width: 100%; background-color: var(--bg); border-radius: 0; padding: 24px clamp(14px,3vw,36px) 32px; }
+.shell { max-width: 1120px; margin: 0 auto; }
+.topline { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:22px; }
+.kicker { color:var(--accent); font-size:.77rem; font-weight:800; letter-spacing:.13em; text-transform:uppercase; }
+.status { border:1px solid var(--border); color:var(--muted); padding:5px 10px; border-radius:999px; font-size:.75rem; white-space:nowrap; }
+h1 { margin:0; font-size:clamp(1.8rem,4vw,2.8rem); line-height:1.15; letter-spacing:-.04em; }
+.lede { color:var(--muted); max-width:760px; margin:13px 0 22px; font-size:.99rem; }
+.hero { background:linear-gradient(120deg,var(--surface),var(--accent2)); border:1px solid var(--border); border-radius:22px; padding:clamp(20px,3.2vw,32px); box-shadow:var(--shadow); position:relative; overflow:hidden; }
+.hero:after { content:"H₂O"; position:absolute; right:20px; bottom:-36px; font-size:clamp(6rem,17vw,11rem); font-weight:900; color:light-dark(#176b8710,#71d7ec10); pointer-events:none; }
+.hero > * { position:relative; z-index:1; }
+.grid { display:grid; grid-template-columns:minmax(285px,.9fr) minmax(0,1.35fr); gap:18px; margin-top:18px; align-items:start; }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:20px; box-shadow:var(--shadow); min-width:0; }
+.card h2 { margin:0 0 7px; font-size:1.1rem; letter-spacing:-.02em; }
+.sub { color:var(--muted); font-size:.85rem; margin:0 0 16px; }
+.field { margin:15px 0; }
+.labelrow { display:flex; justify-content:space-between; gap:12px; align-items:baseline; margin-bottom:7px; font-size:.91rem; font-weight:650; }
+.bigvalue { color:var(--accent); font-weight:850; font-variant-numeric:tabular-nums; }
+select,input[type="number"] { background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:10px; padding:10px 11px; font:inherit; width:100%; }
+input[type="range"] { width:100%; accent-color:var(--accent); }
+.rangescale { display:flex; justify-content:space-between; color:var(--muted); font-size:.74rem; margin-top:2px; }
+.metrics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; margin-top:18px; }
+.metric { background:var(--surface2); border:1px solid var(--border); border-radius:13px; padding:12px; }
+.metric .name { font-size:.75rem; color:var(--muted); }
+.metric .value { font-size:1.42rem; font-weight:850; margin-top:2px; letter-spacing:-.03em; font-variant-numeric:tabular-nums; }
+.metric .unit { font-size:.76rem; color:var(--muted); }
+.formula { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; background:var(--surface2); border:1px solid var(--border); padding:12px; border-radius:12px; overflow-wrap:anywhere; font-size:.94rem; margin:12px 0; }
+.note { background:light-dark(#fff7e6,#342a17); border:1px solid light-dark(#f1d6a0,#5a4823); border-radius:12px; padding:12px 13px; color:var(--text); font-size:.84rem; margin-top:14px; }
+.note strong { color:var(--warn); }
+.chartbox { width:100%; overflow:hidden; }
+svg { display:block; width:100%; height:auto; overflow:visible; }
+.chartlegend { display:flex; flex-wrap:wrap; gap:14px; color:var(--muted); font-size:.8rem; margin:4px 0 0; }
+.legenddot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:5px; vertical-align:middle; background:var(--accent); }
+.legendline { display:inline-block; width:18px; height:3px; margin-right:5px; vertical-align:middle; background:light-dark(#294b70,#8fb2d9); }
+.axisnote { color:var(--muted); font-size:.78rem; margin-top:8px; }
+.tablewrap { overflow-x:auto; margin-top:12px; }
+table { border-collapse:collapse; width:100%; min-width:440px; font-size:.82rem; }
+th,td { border-bottom:1px solid var(--border); padding:8px 7px; text-align:left; }
+th { color:var(--muted); font-weight:750; white-space:nowrap; }
+td input { min-width:92px; padding:7px 8px; font-size:.85rem; }
+.btnrow { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+button { border:1px solid var(--border); background:var(--surface2); color:var(--text); border-radius:10px; padding:9px 12px; font:inherit; font-size:.84rem; font-weight:750; cursor:pointer; transition:transform .12s ease,border-color .12s ease; }
+button:hover { border-color:var(--accent); transform:translateY(-1px); }
+button.primary { background:var(--accent); color:#fff; border-color:transparent; }
+button:focus-visible,select:focus-visible,input:focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
+.resultline { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:12px; color:var(--muted); font-size:.82rem; }
+.pill { background:var(--accent2); color:var(--accent); border:1px solid var(--border); padding:3px 8px; border-radius:999px; font-size:.73rem; font-weight:800; }
+.steps { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:16px; }
+.step { border:1px solid var(--border); background:var(--surface); border-radius:13px; padding:13px; }
+.stepnum { color:var(--accent); font-weight:900; font-size:.78rem; }
+.step p { margin:5px 0 0; font-size:.83rem; color:var(--muted); }
+.footer { color:var(--muted); font-size:.75rem; text-align:center; margin:24px auto 0; max-width:800px; }
+@media (max-width:830px) { .grid { grid-template-columns:1fr; } .steps { grid-template-columns:1fr; } .topline { align-items:flex-start; flex-direction:column; } }
+@media print { body { background:#fff; } #app { padding:0; background:#fff; } .hero,.card,.step { box-shadow:none; break-inside:avoid; } .btnrow { display:none; } }
+</style>
+</head>
+<body>
+<div id="app">
+ <main class="shell">
+  <div class="topline"><div class="kicker">MATERIALS & ENERGY · CHEMISTRY LAB</div><div class="status">오프라인 실행 가능 · 외부 라이브러리 없음</div></div>
+  <section class="hero">
+   <h1>어는점 탐구 실험실</h1>
+   <p class="lede">항공기 제빙 원리를 출발점으로, 용액의 농도를 바꾸어 어는점 변화를 계산하고 직접 측정한 실험값을 그래프로 비교해 보세요.</p>
+   <div class="resultline"><span class="pill">고등학교 화학 모형</span><span>질량 백분율 · 몰랄농도 · 어는점 내림</span></div>
+  </section>
+  <div class="grid">
+   <section class="card" aria-labelledby="controls-title">
+    <h2 id="controls-title">1. 조건 설정</h2>
+    <p class="sub">농도와 용질 종류를 바꾸면 이론 모형 값이 자동으로 갱신됩니다.</p>
+    <div class="field">
+     <div class="labelrow"><label for="solute">용질 모형</label></div>
+     <select id="solute">
+      <option value="glycerol">글리세린 · 비전해질</option>
+      <option value="pg">프로필렌글리콜 · 참고 모형</option>
+      <option value="sucrose">설탕(자당) · 비전해질</option>
+      <option value="nacl">염화나트륨 · 전해질 단순 모형</option>
+     </select>
+    </div>
+    <div class="field">
+     <div class="labelrow"><label for="concentration">용질 질량 백분율</label><span class="bigvalue" id="concText">10%</span></div>
+     <input id="concentration" type="range" min="0" max="40" step="1" value="10" aria-label="용질 질량 백분율">
+     <div class="rangescale"><span>0% · 순수한 물</span><span>40%</span></div>
+    </div>
+    <div class="metrics">
+     <div class="metric"><div class="name">이론 어는점</div><div class="value" id="predTemp">−2.08</div><div class="unit">°C · 이상 모형</div></div>
+     <div class="metric"><div class="name">몰랄농도</div><div class="value" id="molality">1.21</div><div class="unit">mol/kg</div></div>
+    </div>
+    <div class="formula">ΔT<sub>f</sub> = i × K<sub>f</sub> × m<br>예측 어는점 ≈ 0°C − ΔT<sub>f</sub><br>K<sub>f</sub>(물) ≈ 1.86 °C·kg/mol</div>
+    <div class="note"><strong>모형의 한계</strong><br>계산은 묽은 이상 용액을 가정한 근사치입니다. 특히 높은 농도에서는 실제 어는점과 차이가 커질 수 있습니다. 이 화면의 계산값은 실제 항공용 제빙액의 인증 성능값이 아닙니다.</div>
+   </section>
+   <section class="card" aria-labelledby="graph-title">
+    <h2 id="graph-title">2. 농도와 어는점 그래프</h2>
+    <p class="sub">선은 식으로 계산한 이론 모형, 점은 사용자가 입력한 실험값입니다.</p>
+    <div class="chartbox"><svg id="chart" viewBox="0 0 660 390" role="img" aria-label="농도별 이론 어는점과 입력한 측정값 그래프"></svg></div>
+    <div class="chartlegend"><span><i class="legendline"></i>이론 모형</span><span><i class="legenddot"></i>측정값</span></div>
+    <p class="axisnote">가로축: 용질 질량 백분율(%) · 세로축: 어는점(°C). 측정값을 입력하기 전에는 이론 곡선만 표시됩니다.</p>
+   </section>
+  </div>
+  <section class="card" style="margin-top:18px" aria-labelledby="data-title">
+   <h2 id="data-title">3. 내 실험값 입력</h2>
+   <p class="sub">실험에서 실제로 측정한 어는점을 입력하면 그래프에 점이 표시됩니다. 아직 실험 전이라면 빈칸으로 두세요.</p>
+   <div class="tablewrap"><table><thead><tr><th>농도(질량%)</th><th>측정 어는점(°C)</th><th>이론 모형(°C)</th></tr></thead><tbody id="dataRows"></tbody></table></div>
+   <div class="btnrow">
+    <button class="primary" id="csvBtn" type="button">측정표 CSV 저장</button>
+    <button id="demoBtn" type="button">가상 예시값 넣기</button>
+    <button id="clearBtn" type="button">측정값 지우기</button>
+   </div>
+   <div id="dataStatus" class="resultline" aria-live="polite">측정값이 없습니다. 실험 후 직접 입력하세요.</div>
+  </section>
+  <section class="card" style="margin-top:18px" aria-labelledby="steps-title">
+   <h2 id="steps-title">4. 실험은 이렇게 설계하세요</h2>
+   <p class="sub">학교 실험은 담당 교사의 승인과 감독 아래 진행합니다.</p>
+   <div class="steps">
+    <div class="step"><div class="stepnum">STEP 01 · 혼합</div><p>총질량을 일정하게 유지하고 0%, 5%, 10%, 15%, 20% 글리세린-물 용액을 준비합니다.</p></div>
+    <div class="step"><div class="stepnum">STEP 02 · 냉각·측정</div><p>같은 크기의 용기에 담아 같은 냉각 조건에서 온도를 일정한 간격으로 기록합니다. 결정이 처음 생긴 온도와 과냉각 여부를 함께 봅니다.</p></div>
+    <div class="step"><div class="stepnum">STEP 03 · 비교</div><p>각 농도를 3회 반복하고 평균을 계산합니다. 이상 모형과 측정값이 다르면 농도 범위와 오차 원인을 검토합니다.</p></div>
+   </div>
+   <div class="note"><strong>항공 분야와 연결할 때</strong><br>실제 항공기 제빙·방빙액에는 글리콜 계열 성분 등이 사용될 수 있지만, 이 실험은 글리세린을 이용한 모형 실험입니다. 실제 항공용 제품의 농도나 운용 기준을 이 모형만으로 정하면 안 됩니다. 글리세린은 먹지 말고, 보안경·장갑을 사용하며 냉각 욕조는 교사 지시에 따라 준비하세요.</div>
+  </section>
+  <p class="footer">수업용 교육 시뮬레이터 · 계산식과 데이터 입력은 이 기기 안에서만 작동합니다. ‘가상 예시값’은 실제 실험 데이터가 아니며 보고서의 측정 결과로 제출하면 안 됩니다.</p>
+ </main>
+</div>
+<script>
+const KFW = 1.86;
+const SOLUTES = {
+ glycerol: {name:'글리세린', M:92.09, i:1, note:'비전해질 모형'},
+ pg: {name:'프로필렌글리콜', M:76.10, i:1, note:'비전해질 참고 모형'},
+ sucrose: {name:'설탕(자당)', M:342.30, i:1, note:'비전해질 비교 모형'},
+ nacl: {name:'염화나트륨', M:58.44, i:2, note:'완전 해리를 가정한 단순 모형'}
+};
+const concentrations = [0,5,10,15,20,25,30,35,40];
+const inputValues = Object.fromEntries(concentrations.map(c=>[c,'']));
+const $ = id => document.getElementById(id);
+function calc(pct, key=$('solute').value) {
+ const s=SOLUTES[key];
+ if (pct<=0) return {molality:0, temp:0, soluteMass:0, waterMass:100};
+ const soluteMass=pct; // g in 100 g solution
+ const waterMass=100-pct; // g
+ const moles=soluteMass/s.M;
+ const molality=moles/(waterMass/1000);
+ const delta=s.i*KFW*molality;
+ return {molality, temp:-delta, soluteMass, waterMass};
+}
+function fmt(n,d=2) { return Number.isFinite(n) ? n.toFixed(d).replace('-', '−') : '—'; }
+function updateMain() {
+ const pct=Number($('concentration').value), result=calc(pct);
+ $('concText').textContent=pct+'%';
+ $('predTemp').textContent=fmt(result.temp,2);
+ $('molality').textContent=fmt(result.molality,2);
+ renderTable(); renderChart(); updateStatus();
+}
+function renderTable() {
+ const body=$('dataRows'); body.innerHTML='';
+ concentrations.forEach(c=>{
+  const tr=document.createElement('tr');
+  const td1=document.createElement('td'); td1.textContent=c+'%'; tr.appendChild(td1);
+  const td2=document.createElement('td');
+  const input=document.createElement('input'); input.type='number'; input.step='0.1'; input.min='-100'; input.max='20'; input.inputMode='decimal'; input.setAttribute('aria-label',`${c}% 농도의 측정 어는점 °C`); input.placeholder='측정값'; input.value=inputValues[c];
+  input.addEventListener('input',()=>{inputValues[c]=input.value; renderChart(); updateStatus();}); td2.appendChild(input); tr.appendChild(td2);
+  const td3=document.createElement('td'); td3.textContent=fmt(calc(c).temp,2); tr.appendChild(td3);
+  body.appendChild(tr);
+ });
+}
+function renderChart() {
+ const svg=$('chart'); const W=660,H=390, pad={l:62,r:22,t:22,b:55};
+ const innerW=W-pad.l-pad.r, innerH=H-pad.t-pad.b, xMin=0,xMax=40;
+ const predictionMin=Math.min(...Array.from({length:41},(_,x)=>calc(x).temp));
+ const observed=concentrations.filter(c=>inputValues[c]!=='' && Number.isFinite(Number(inputValues[c]))).map(c=>Number(inputValues[c]));
+ const yMin=Math.floor(Math.min(-5,predictionMin-2,(observed.length?Math.min(...observed)-2:0))/5)*5;
+ const yMax=Math.ceil(Math.max(2,(observed.length?Math.max(...observed)+2:0))/5)*5;
+ const X=x=>pad.l+(x-xMin)/(xMax-xMin)*innerW;
+ const Y=y=>pad.t+(yMax-y)/(yMax-yMin)*innerH;
+ let out='';
+ for(let y=Math.ceil(yMin/5)*5;y<=yMax;y+=5){out+=`<line x1="${pad.l}" y1="${Y(y)}" x2="${W-pad.r}" y2="${Y(y)}" style="stroke:var(--border);stroke-width:1"/>`;out+=`<text x="${pad.l-10}" y="${Y(y)+4}" text-anchor="end" style="fill:var(--muted)" font-size="12">${y}</text>`;}
+ for(let x=0;x<=40;x+=5){out+=`<line x1="${X(x)}" y1="${pad.t}" x2="${X(x)}" y2="${H-pad.b}" style="stroke:var(--border);stroke-width:.6;opacity:.75"/>`;out+=`<text x="${X(x)}" y="${H-pad.b+23}" text-anchor="middle" style="fill:var(--muted)" font-size="11">${x}</text>`;}
+ out+=`<line x1="${pad.l}" y1="${H-pad.b}" x2="${W-pad.r}" y2="${H-pad.b}" style="stroke:var(--muted);stroke-width:1.4"/>`;
+ out+=`<line x1="${pad.l}" y1="${pad.t}" x2="${pad.l}" y2="${H-pad.b}" style="stroke:var(--muted);stroke-width:1.4"/>`;
+ out+=`<text x="${pad.l+innerW/2}" y="${H-10}" text-anchor="middle" style="fill:var(--text)" font-size="12">용질 질량 백분율 (%)</text>`;
+ out+=`<text x="17" y="${pad.t+innerH/2}" transform="rotate(-90 17 ${pad.t+innerH/2})" text-anchor="middle" style="fill:var(--text)" font-size="12">어는점 (°C)</text>`;
+ const curve=[]; for(let x=0;x<=40;x+=1){const y=calc(x).temp; curve.push(`${x===0?'M':'L'} ${X(x).toFixed(1)} ${Y(y).toFixed(1)}`);}
+ out+=`<path d="${curve.join(' ')}" fill="none" style="stroke:var(--muted);stroke-width:3;stroke-linecap:round;stroke-linejoin:round"/>`;
+ let pts=[]; concentrations.forEach(c=>{const raw=inputValues[c]; if(raw!=='' && Number.isFinite(Number(raw))){pts.push({x:c,y:Number(raw)});}});
+ if(pts.length>1){out+=`<path d="${pts.map((p,i)=>`${i?'L':'M'} ${X(p.x).toFixed(1)} ${Y(p.y).toFixed(1)}`).join(' ')}" fill="none" style="stroke:var(--accent);stroke-width:2;stroke-dasharray:5 4"/>`;}
+ pts.forEach(p=>{out+=`<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="5.5" style="fill:var(--accent);stroke:var(--surface);stroke-width:2"><title>${p.x}% : ${p.y}°C (측정값)</title></circle>`;});
+ const markerX=Number($('concentration').value), markerY=calc(markerX).temp;
+ out+=`<line x1="${X(markerX)}" y1="${Y(markerY)}" x2="${X(markerX)}" y2="${H-pad.b}" style="stroke:var(--accent);stroke-dasharray:3 4;opacity:.7"/>`;
+ out+=`<circle cx="${X(markerX)}" cy="${Y(markerY)}" r="6" style="fill:var(--surface);stroke:var(--accent);stroke-width:3"><title>선택 농도 ${markerX}%: 이론값 ${fmt(markerY)}°C</title></circle>`;
+ svg.innerHTML=out;
+}
+function updateStatus() {
+ const count=concentrations.filter(c=>inputValues[c]!=='' && Number.isFinite(Number(inputValues[c]))).length;
+ $('dataStatus').textContent=count===0?'측정값이 없습니다. 실험 후 직접 입력하세요.':`${count}개 농도의 측정값이 입력되었습니다. 그래프의 점은 사용자 입력값이며 이론선과 구분해 해석하세요.`;
+}
+$('solute').addEventListener('change',updateMain);
+$('concentration').addEventListener('input',updateMain);
+$('clearBtn').addEventListener('click',()=>{concentrations.forEach(c=>inputValues[c]='');renderTable();renderChart();updateStatus();});
+$('demoBtn').addEventListener('click',()=>{
+ // Synthetic values only to demonstrate the plotting feature; not experimental measurements.
+ const demo={0:0,5:-0.4,10:-1.1,15:-2.0,20:-3.2,25:-4.7,30:-6.5,35:-8.8,40:-12.0};
+ concentrations.forEach(c=>inputValues[c]=String(demo[c])); renderTable();renderChart();
+ $('dataStatus').textContent='가상 시연 데이터가 입력되었습니다. 실제 측정값이 아니므로 보고서의 결과로 사용하지 마세요.';
+});
+$('csvBtn').addEventListener('click',()=>{
+ const key=$('solute').value, label=SOLUTES[key].name;
+ const rows=[['용질 모형',label],['농도 질량%', '측정 어는점 °C','이론 모형 어는점 °C']];
+ concentrations.forEach(c=>rows.push([c,inputValues[c]===''?'':inputValues[c],calc(c,key).temp.toFixed(3)]));
+ const csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+ const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}), url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='어는점_탐구_데이터.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+});
+updateMain();
+</script>
+</body>
+</html>
